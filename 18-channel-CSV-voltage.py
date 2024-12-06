@@ -568,7 +568,7 @@ def process_data():
 # Timer for regular updates
 timer = QtCore.QTimer()
 timer.timeout.connect(process_data)
-timer.start(15)# needs to be a bit less than teensy_sample_delay/(num_pins_sampled+1)  (currently 100/5=20) to keep up. 
+timer.start(50)
 
 # Start the main window
 main_window.show()
