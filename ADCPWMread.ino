@@ -3,6 +3,7 @@
 #include "Teensy_PWM.h"
 
 #define USING_FLEX_TIMERS      true
+#define SAMPLE_RATE 100
 
 #if USING_FLEX_TIMERS
 uint32_t PWM_Pins[] = { 4, 5, 6, 7 };
@@ -10,15 +11,42 @@ uint32_t PWM_Pins[] = { 4, 5, 6, 7 };
 uint32_t PWM_Pins[] = { 10, 11, 14, 15 };
 #endif
 
-uint32_t ADC_Pins[] = { A10, A11, A12, A13 };
+uint32_t ADC_Pins[] = {A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17};
 
 // Same duty cycle and frequency for all pins
 float dutyCycle[]   = { 50.0f, 50.0f, 50.0f, 50.0f };  // 50% duty cycle for all channels
 float frequency = 2000.0f;  // Same frequency for all channels
 
 #define NUM_OF_PINS       ( sizeof(PWM_Pins) / sizeof(uint32_t) )
-
+#define NUM_ADC_PINS sizeof(ADC_Pins) / sizeof(uint32_t)
 Teensy_PWM* PWM_Instance[NUM_OF_PINS];
+
+const int bufferSize = NUM_ADC_PINS * 2;
+int sampleRate = SAMPLE_RATE; 
+IntervalTimer sampleTimer;
+uint8_t buffer1[2000][bufferSize];
+volatile bool bufferReady = false;
+volatile int bufferHead=0;
+volatile int bufferTail=2;
+volatile int bufferIndex = 0;
+
+
+void sampleData() {
+  for (uint16_t i = 0; i < NUM_ADC_PINS; i++) {
+    int sensorValue = analogRead(ADC_Pins[i]);
+    buffer1[bufferTail][bufferIndex++] = sensorValue & 0xFF; // Lower byte
+    buffer1[bufferTail][bufferIndex++] = sensorValue>>8; // Upper byte
+  }
+
+  
+  bufferIndex=0;
+  bufferTail++;
+  if(bufferTail>=2000){
+    bufferTail=0;
+  }
+
+}
+
 
 void setup() {
   /*Serial.begin(115200);*/
@@ -26,44 +54,30 @@ void setup() {
 
   while (!Serial && millis() < 5000);
   delay(500);
-
+  for (int i = 0; i < NUM_ADC_PINS; i++) {
+    pinMode(ADC_Pins[i], INPUT);
+  }
   for (uint8_t index = 0; index < NUM_OF_PINS; index++) {
     PWM_Instance[index] = new Teensy_PWM(PWM_Pins[index], frequency, dutyCycle[index]);
     if (PWM_Instance[index]) {
       PWM_Instance[index]->setPWM();
     }
   }
+  sampleTimer.begin(sampleData, 1000000 / sampleRate);
+  delay(2);
 
-  Serial.println("Pin\tPWM_freq\tDutyCycle\tActual Freq");
-  for (uint8_t index = 0; index < NUM_OF_PINS; index++) {
-    if (PWM_Instance[index]) {
-      Serial.print(PWM_Pins[index]);
-      Serial.print("\t");
-      Serial.print(frequency);
-      Serial.print("\t\t");
-      Serial.print(dutyCycle[index]);
-      Serial.print("\t\t");
-      Serial.println(PWM_Instance[index]->getActualFreq(), 4);
-    }
-  }
 }
 
 void loop() {
-  // Capture the PWM signals using ADC on A10-A14
-  Serial.println("Capturing PWM signals from ADC pins (A10-A14):");
 
-  for (uint8_t i = 0; i < NUM_OF_PINS; i++) {
-    int adcValue = analogRead(ADC_Pins[i]);
-    float voltage = (adcValue / 1023.0) * 3.3;  // Teensy ADC is 10-bit, max value is 1023 and reference voltage is 3.3V
+    while(bufferHead!=bufferTail){
 
-    Serial.print("ADC Pin: A");
-    Serial.print(10 + i);  // Mapping A10-A14
-    Serial.print(", ADC Value: ");
-    Serial.print(adcValue);
-    Serial.print(", Voltage: ");
-    Serial.print(voltage, 4);
-    Serial.println(" V");
+    Serial.write(buffer1[bufferHead],36);
+    bufferHead++;
+    if(bufferHead>=2000){
+      bufferHead=0;
+    }
   }
 
-  delay(1000);  // Reduce the delay for more frequent reads
+
 }
