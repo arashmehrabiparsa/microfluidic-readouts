@@ -475,7 +475,7 @@ import csv
 import os
 
 # Serial connection setup
-serial_port = 'COM5'  # Update as needed
+serial_port = 'COM6'  # Update as needed
 baud_rate = 921600
 ser = serial.Serial(serial_port, baud_rate)
 
@@ -489,7 +489,7 @@ header_format = "{:<15}" + "{:<12}" * 18
 row_format = "{:<15}" + "{:<12.4f}" * 18
 
 # Write header
-header = header_format.format('Timestamp', *[f'ADC Pin A{10 + i}' for i in range(18)])
+header = header_format.format('Timestamp', *[f'ADC Pin A{i}' for i in range(18)])
 csv_file.write(header + "\n")
 
 # PyQtGraph setup
@@ -536,7 +536,7 @@ def toggle_curve(channel_index, is_checked):
     curves[channel_index].setVisible(is_checked)
 
 for i in range(num_channels):
-    create_checkbox(f"ADC Pin A{10 + i}", i)
+    create_checkbox(f"ADC Pin A{i}", i)
 
 # Add checkboxes to the main layout in a separate widget
 checkbox_widget = QtWidgets.QWidget()
