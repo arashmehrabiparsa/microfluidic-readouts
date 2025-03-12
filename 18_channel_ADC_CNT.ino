@@ -16,7 +16,12 @@ unsigned long lastImpedanceTime = 0;
 unsigned long lastCNTTime = 0;
 unsigned long lastLEDBlinkTime = 0; // Time for the LED blink
 bool ledState = LOW; // Current state of the LED
-
+// {A0, A1, A2, A3, A4, A5, A6, A7, A8, A9} == {0, 1, 2, 3, 4, 5, 6, 7, 8, 9} pin mapping 
+// {A15, A16, A17} == {10, 11, 12} pin mapping
+// {A10, A11} == {36, 37} pin mapping for white cables
+// {A12} == {28}
+// {A13} == {29}
+// {A14} == {GND}
 const int channelPins[NUM_CHANNELS] = {A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17}; // Fill in pins
 q15_t sensorValues[NUM_SAMPLES];
 q15_t complexBuffer[NUM_SAMPLES * 2];
